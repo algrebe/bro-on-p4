@@ -74,6 +74,11 @@ register port_scan_count_registers {
     instance_count: 8192;
 }
 
+register debug_registers {
+    width: 32;
+    instance_count: 10;
+}
+
 metadata ingress_metadata_t ingress_metadata;
 
 action _drop() {
@@ -118,12 +123,16 @@ action increment_port_scan_count() {
 
     register_write(port_scan_count_registers, ingress_metadata.ip_hash,
         ingress_metadata.port_scan_count);
+
+    register_write(debug_registers, 2, ingress_metadata.ip_hash);
 }
 
 
 action on_syn() {
     modify_field_with_hash_based_offset(ingress_metadata.tcp_hash, 0,
         tcp_syn_hash_spec, TCP_MAP_SIZE);
+
+    register_write(debug_registers, 0, ingress_metadata.tcp_hash);
 
     register_write(seqno_registers, ingress_metadata.tcp_hash, tcp.seqNo);
     add_to_field(ingress_metadata.is_syn, 1);
@@ -136,6 +145,8 @@ action on_rstack() {
     modify_field(ingress_metadata.is_rstack, 1);
     modify_field_with_hash_based_offset(ingress_metadata.tcp_hash, 0,
         tcp_rstack_hash_spec, TCP_MAP_SIZE);
+
+    register_write(debug_registers, 1, ingress_metadata.tcp_hash);
 
     register_read(ingress_metadata.last_seq_no,
         seqno_registers, ingress_metadata.tcp_hash);
@@ -168,7 +179,7 @@ control ingress {
     }
     
     else if (ingress_metadata.is_rstack == 1) {
-        if (ingress_metadata.last_seq_no == tcp.seqNo) {
+        if (ingress_metadata.last_seq_no == tcp.ackNo) {
             apply(port_scan_counts);
 
             if (ingress_metadata.port_scan_count > PORT_SCAN_THRESHOLD) {
