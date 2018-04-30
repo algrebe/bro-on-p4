@@ -25,6 +25,7 @@ header ethernet_t ethernet;
 parser parse_ethernet {
     extract(ethernet);
     return select(latest.etherType) {
+    	0: dummy;
         ETHERTYPE_IPV4 : parse_ipv4;
         default: ingress;
     }
@@ -74,4 +75,11 @@ header tcp_t tcp;
 parser parse_tcp {
     extract(tcp);
     return ingress;
+}
+
+header bro_t bro_header;
+
+parser dummy {
+    extract(bro_header);
+    return parse_ipv4;
 }

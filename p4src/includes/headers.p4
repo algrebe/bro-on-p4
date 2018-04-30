@@ -54,3 +54,12 @@ header_type tcp_t {
         urgentPtr : 16;
     }
 }
+
+header_type bro_t {
+    fields {
+        event: 32;
+        srcAddr: 32;
+        dstAddr: 32;
+        numPort: 32;
+    }
+}

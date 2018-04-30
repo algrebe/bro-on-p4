@@ -70,7 +70,7 @@ register seqno_registers {
 }
 
 register port_scan_count_registers {
-    width : 8;
+    width : 32;
     instance_count: 8192;
 }
 
@@ -157,6 +157,12 @@ action on_rstack() {
     modify_field(standard_metadata.egress_spec, 1);
 }
 
+counter debug_counter {
+    type: packets;
+    static: debug_counter_table;
+    instance_count: 1;
+}
+
 action debug_counter_incr() {
     count(debug_counter, 0);
 }
@@ -166,10 +172,18 @@ table debug_counter_table {
     size: 1;
 }
 
-counter debug_counter {
-    type: packets;
-    static: debug_counter_table;
-    instance_count: 1;
+action add_bro_header() {
+    add_header(bro_header);
+    modify_field(ethernet.etherType, 0x4444);
+    modify_field(bro_header.event, 10);
+    modify_field(bro_header.srcAddr, ipv4.dstAddr);
+    modify_field(bro_header.dstAddr, ipv4.srcAddr);
+    modify_field(bro_header.numPort, ingress_metadata.port_scan_count);
+}
+
+table alert_port_scan {
+    actions { add_bro_header; }
+    size: 1;
 }
 
 control ingress {
@@ -184,6 +198,7 @@ control ingress {
 
             if (ingress_metadata.port_scan_count > PORT_SCAN_THRESHOLD) {
                 apply(debug_counter_table);
+		apply(alert_port_scan);
             }
         }
     }
