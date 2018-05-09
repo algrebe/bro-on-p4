@@ -6,6 +6,7 @@
 #define TCP_MAP_SIZE 8192  // 2^13
 #define IP_MAP_SIZE 8192 // 2 ^ 13
 #define PORT_SCAN_THRESHOLD 10
+#define BRO_SESSION_ID 250
 
 header_type ingress_metadata_t {
     fields {
@@ -172,17 +173,23 @@ table debug_counter_table {
     size: 1;
 }
 
-action add_bro_header() {
-    add_header(bro_header);
-    modify_field(ethernet.etherType, 0x4444);
-    modify_field(bro_header.event, 10);
-    modify_field(bro_header.srcAddr, ipv4.dstAddr);
-    modify_field(bro_header.dstAddr, ipv4.srcAddr);
-    modify_field(bro_header.numPort, ingress_metadata.port_scan_count);
+field_list clone_fields {
+    standard_metadata;
+}
+
+counter clone_debug_counter {
+    type: packets;
+    static: alert_port_scan;
+    instance_count: 1;
+}
+
+action create_packet_clone() {
+    count(clone_debug_counter, 0);
+    clone_ingress_pkt_to_egress(BRO_SESSION_ID, clone_fields);
 }
 
 table alert_port_scan {
-    actions { add_bro_header; }
+    actions { create_packet_clone; }
     size: 1;
 }
 
@@ -204,5 +211,48 @@ control ingress {
     }
 }
 
+counter egress_debug_counter {
+    type: packets;
+    static: egress_debug_counter_table;
+    instance_count: 5;
+}
+
+action egress_debug_counter_incr(index) {
+    count(egress_debug_counter, index);
+}
+
+table egress_debug_counter_table {
+    reads {
+        standard_metadata.instance_type: exact;
+    }
+    actions { egress_debug_counter_incr; }
+    size: 5;
+}
+
+action add_bro_header() {
+    modify_field_with_hash_based_offset(ingress_metadata.ip_hash, 0,
+        ip_hash_spec, IP_MAP_SIZE);
+
+    register_read(ingress_metadata.port_scan_count,
+        port_scan_count_registers, ingress_metadata.ip_hash);
+
+    add_header(bro_header);
+    modify_field(ethernet.etherType, 0x4444);
+    modify_field(bro_header.event, 10);
+    modify_field(bro_header.srcAddr, ipv4.dstAddr);
+    modify_field(bro_header.dstAddr, ipv4.srcAddr);
+    modify_field(bro_header.numPort, ingress_metadata.port_scan_count);
+    modify_field(standard_metadata.egress_spec, 3);
+}
+
+table create_bro_packet {
+    actions { add_bro_header; }
+    size: 1;
+}
+
 control egress {
+    apply(egress_debug_counter_table);
+    if (standard_metadata.instance_type != 0) {
+        apply(create_bro_packet);
+    }
 }
