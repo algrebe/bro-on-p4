@@ -1,0 +1,3 @@
+table_set_default arp_request_packet count_request_packet
+table_set_default arp_reply_packet count_reply_packet
+table_set_default corrupted_packet_table count_corrupted_packet
