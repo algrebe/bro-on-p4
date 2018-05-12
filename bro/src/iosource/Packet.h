@@ -20,7 +20,6 @@ enum Layer3Proto {
 	L3_IPV4 = 1,	/// Layer 3 is IPv4.
 	L3_IPV6 = 2,	/// Layer 3 is IPv6.
 	L3_ARP = 3,	/// Layer 3 is ARP.
-    L3_P4 = 4,
 };
 
 /**

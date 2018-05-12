@@ -30,13 +30,6 @@ class PacketFilter;
 namespace analyzer { namespace stepping_stone { class SteppingStoneManager; } }
 namespace analyzer { namespace arp { class ARP_Analyzer; } }
 
-struct P4Header {
-    uint32_t event;
-    uint32_t srcAddr;
-    uint32_t dstAddr;
-    uint32_t numPorts;
-};
-
 struct SessionStats {
 	int num_TCP_conns;
 	int max_TCP_conns;
@@ -74,7 +67,6 @@ public:
 	NetSessions();
 	~NetSessions();
 
-    void parseP4Packet(const Packet* pkt);
 	// Main entry point for packet processing.
 	void NextPacket(double t, const Packet* pkt);
 

@@ -4,7 +4,7 @@
 #include "bro-config.h"
 
 #include <arpa/inet.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -33,8 +33,6 @@
 #include "TunnelEncapsulation.h"
 
 #include "analyzer/Manager.h"
-
-#define KCLOG(msg) std::cout << __PRETTY_FUNCTION__ << " " << msg << std::endl;
 
 // These represent NetBIOS services on ephemeral ports.  They're numbered
 // so that we can use a single int to hold either an actual TCP/UDP server
@@ -227,12 +225,7 @@ void NetSessions::NextPacket(double t, const Packet* pkt)
 		if ( arp_analyzer )
 			arp_analyzer->NextPacket(t, pkt);
 		}
-	else if ( pkt->l3_proto == L3_P4 ) 
-        {
-	    std::cout << __PRETTY_FUNCTION__ << "L3_P4" << std::endl;
-	    parseP4Packet(pkt);
-        return;
-	    }
+
 	else
 		{
 		Weird("unknown_packet_type", pkt);
@@ -243,30 +236,6 @@ void NetSessions::NextPacket(double t, const Packet* pkt)
 	if ( dump_this_packet && ! record_all_packets )
 		DumpPacket(pkt);
 	}
-
-void NetSessions::parseP4Packet(const Packet* pkt) {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-  const u_char *data = pkt->data;
-  const struct P4Header* p4h = (const struct P4Header*) (data + pkt->hdr_size);
-
-  /*
-  struct P4Header *p4h = (struct P4Header *) malloc (16);
-  memcpy(p4h, data + pkt->hdr_size, 16);
-
-  u_char *d = (u_char *)data + pkt->hdr_size;
-  int i;
-  printf("Bytes: ");
-  for(i=0; i < 16; i++) {
-      printf("%x ", *((uint8_t *)(d)));
-      d++;
-  }
-  printf("\n");
-  */
-  KCLOG("event: " << ntohl(p4h->event));
-  KCLOG("numPorts: " << ntohl(p4h->numPorts));
-  KCLOG("src: " << ntohl(p4h->srcAddr));
-  KCLOG("dst: " << ntohl(p4h->dstAddr));
-}
 
 int NetSessions::CheckConnectionTag(Connection* conn)
 	{
