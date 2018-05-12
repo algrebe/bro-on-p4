@@ -225,6 +225,10 @@ void Packet::ProcessLayer2()
 				l3_proto = L3_IPV6;
 			else if ( protocol == 0x0806 || protocol == 0x8035 )
 				l3_proto = L3_ARP;
+			else if ( protocol == 0x4444 ) {
+			  std::cout << __PRETTY_FUNCTION__ << "p4 packet" << std::endl;
+			  l3_proto = L3_P4;
+			}
 			else
 				{
 				// Neither IPv4 nor IPv6.
