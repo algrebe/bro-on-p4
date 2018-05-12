@@ -1,4 +1,7 @@
-ARP contains p4 code that is used for detecting ARP related BRO events on p4. 
-portscan contains p4 code that is used for detecting portscan on p4 using a simple algorithm.
+# Offloading computation from BRO onto a P4 enabled switch
 
-Use ./run_demo.sh to start the software switch and mininet topology and send.py to send packets from the hosts for both examples.
+[Bro](https://github.com/bro/bro/) is an Intrusion Detection System that listens on a host interface.
+This project aims to offload some of its event detection logic onto a [P4](https://p4.org/) enabled switch.
+The arp folder contains P4 code that detects different ARP events and indicates detection using counters.
+The portscan folder contains P4 code that detects a single host portscan and sends a packet with a custom header to bro.
+The bro folder contains the changes to Bro to read the new custom header and raise the right event based on the event type.
